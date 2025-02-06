@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ピザ切り分け判定</title>
+    <style>
+        body {
+            text-align: center;
+        }
+        canvas {
+            border: 2px solid black;
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body>
+    <h1>ピザを切り分けよう！</h1>
+    <canvas id="pizzaCanvas" width="400" height="400"></canvas>
+    <p id="result">切り分け数: 1</p>
+    <script>
+        const canvas = document.getElementById("pizzaCanvas");
+        const ctx = canvas.getContext("2d");
+        let lines = [];
+        let sliceCount = 1;
+
+        const pizzaImage = new Image();
+        pizzaImage.src = "image/food_pizza_whole.png";
+        pizzaImage.onload = () => {
+            drawPizza();
+        };
+
+        function drawPizza() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(pizzaImage, 0, 0, canvas.width, canvas.height);
+            drawLines();
+        }
+
+        function drawLines() {
+            ctx.strokeStyle = "red";
+            ctx.lineWidth = 2;
+            lines.forEach(([x1, y1, x2, y2]) => {
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            });
+        }
+
+        function calculateSlices() {
+            sliceCount = lines.length + 1;
+            document.getElementById("result").textContent = `切り分け数: ${sliceCount}`;
+        }
+
+        let startX, startY;
+        let drawing = false;
+        
+        canvas.addEventListener("mousedown", (e) => {
+            startX = e.offsetX;
+            startY = e.offsetY;
+            drawing = true;
+        });
+
+        canvas.addEventListener("mouseup", (e) => {
+            if (!drawing) return;
+            const endX = e.offsetX;
+            const endY = e.offsetY;
+            lines.push([startX, startY, endX, endY]);
+            drawPizza();
+            calculateSlices();
+            drawing = false;
+        });
+    </script>
+</body>
+</html>

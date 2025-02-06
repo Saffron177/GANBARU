@@ -94,11 +94,21 @@
         }
 
         function calculateAreas(segments) {
-            sliceAreas = segments.map(() => 100 / segments.length);
-            let resultText = "各ピースの割合: " + sliceAreas.map(area => area.toFixed(2) + "%").join(", ");
-            document.getElementById("areaResult").textContent = resultText;
+    const radius = canvas.width / 2; // ピザの半径
+    const totalArea = Math.PI * Math.pow(radius, 2); // ピザの面積
+    sliceAreas = segments.map(([startAngle, endAngle]) => {
+        let angle = endAngle - startAngle;
+        if (angle < 0) {
+            angle += 2 * Math.PI; // 角度が負の場合、2πを足して正の角度に調整
         }
+        const segmentArea = (angle / (2 * Math.PI)) * totalArea;
+        return (segmentArea / totalArea) * 100; // パーセンテージで計算
+    });
 
+    let resultText = "各ピースの割合: " + sliceAreas.map(area => area.toFixed(2) + "%").join(", ");
+    document.getElementById("areaResult").textContent = resultText;
+}
+        
         function colorSlices(segments) {
             const colors = ["rgba(255, 0, 0, 0.3)", "rgba(0, 255, 0, 0.3)", "rgba(0, 0, 255, 0.3)", "rgba(255, 255, 0, 0.3)", "rgba(255, 0, 255, 0.3)", "rgba(0, 255, 255, 0.3)", "rgba(200, 100, 50, 0.3)"];
             ctx.clearRect(0, 0, canvas.width, canvas.height);

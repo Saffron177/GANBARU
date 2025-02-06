@@ -3,27 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ピザ切り分け判定</title>
+    <title>ピザを7等分に切るゲーム</title>
     <style>
         body {
             text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        #game-container {
+            position: relative;
+            display: inline-block;
         }
         canvas {
             border: 2px solid black;
             cursor: crosshair;
         }
+        #result {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
-    <h1>ピザを切り分けよう！</h1>
-    <canvas id="pizzaCanvas" width="400" height="400"></canvas>
-    <p id="result">切り分け数: 1</p>
+    <h1>ピザを7等分に切るゲーム</h1>
+    <p>ドラッグして線を引き、7等分を目指そう！</p>
+    <canvas id="canvas" width="400" height="400"></canvas>
+    <br>
+    <button onclick="calculateSlices()">計算する</button>
+    <button onclick="resetGame()">リセット</button>
+    <div id="result">切り分け数: 1</div>
+    <div id="areaResult"></div>
+    
     <script>
-        const canvas = document.getElementById("pizzaCanvas");
+        const canvas = document.getElementById("canvas");
         const ctx = canvas.getContext("2d");
         let lines = [];
         let sliceCount = 1;
-
+        let sliceAreas = [];
+        
         const pizzaImage = new Image();
         pizzaImage.src = "image/food_pizza_whole.png";
         pizzaImage.onload = () => {
@@ -48,8 +63,59 @@
         }
 
         function calculateSlices() {
-            sliceCount = lines.length + 1;
+            const segments = getSegments();
+            sliceCount = segments.length;
             document.getElementById("result").textContent = `切り分け数: ${sliceCount}`;
+            calculateAreas(segments);
+            colorSlices(segments);
+        }
+
+        function getSegments() {
+            // 中心から放射状に切断された領域を取得する
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            let angles = [];
+            
+            lines.forEach(([x1, y1, x2, y2]) => {
+                angles.push(Math.atan2(y1 - centerY, x1 - centerX));
+                angles.push(Math.atan2(y2 - centerY, x2 - centerX));
+            });
+            
+            angles = [...new Set(angles)].sort((a, b) => a - b);
+            let segments = [];
+            
+            for (let i = 0; i < angles.length; i++) {
+                let startAngle = angles[i];
+                let endAngle = angles[(i + 1) % angles.length];
+                segments.push([startAngle, endAngle]);
+            }
+            
+            return segments;
+        }
+
+        function calculateAreas(segments) {
+            sliceAreas = segments.map(() => 100 / segments.length);
+            let resultText = "各ピースの割合: " + sliceAreas.map(area => area.toFixed(2) + "%").join(", ");
+            document.getElementById("areaResult").textContent = resultText;
+        }
+
+        function colorSlices(segments) {
+            const colors = ["rgba(255, 0, 0, 0.3)", "rgba(0, 255, 0, 0.3)", "rgba(0, 0, 255, 0.3)", "rgba(255, 255, 0, 0.3)", "rgba(255, 0, 255, 0.3)", "rgba(0, 255, 255, 0.3)", "rgba(200, 100, 50, 0.3)"];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(pizzaImage, 0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            segments.forEach((segment, index) => {
+                ctx.beginPath();
+                ctx.moveTo(centerX, centerY);
+                ctx.arc(centerX, centerY, canvas.width / 2, segment[0], segment[1]);
+                ctx.closePath();
+                ctx.fillStyle = colors[index % colors.length];
+                ctx.fill();
+            });
+            drawLines();
         }
 
         let startX, startY;
@@ -67,9 +133,17 @@
             const endY = e.offsetY;
             lines.push([startX, startY, endX, endY]);
             drawPizza();
-            calculateSlices();
             drawing = false;
         });
+
+        function resetGame() {
+            lines = [];
+            sliceCount = 1;
+            sliceAreas = [];
+            drawPizza();
+            document.getElementById("result").textContent = "切り分け数: 1";
+            document.getElementById("areaResult").textContent = "";
+        }
     </script>
 </body>
 </html>
